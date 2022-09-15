@@ -368,7 +368,7 @@ This is a basic chart using ggplot. To break down the code: - These lines: Race 
     1: Build a table for NewYorkTimes employees, and determine median salary of NewYorkTimes employees   
 
 ```{r}
-NYT <- subset(MediaBucks, grepl("?NYT", COMPANY))
+NYT <- subset(MediaBucks, grepl("?NewYorkTimes", COMPANY))
 summary(NYT$Salary)
 ```
 
@@ -377,7 +377,7 @@ summary(NYT$Salary)
 ```{r}
 NYT %>% 
   select(TITLE, Gender, Race, Salary) %>% 
-  filter(Salary==65000)
+  filter(Salary=="350000")
 
 ```
 
