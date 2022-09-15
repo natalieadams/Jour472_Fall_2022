@@ -237,6 +237,9 @@ WSJ <- subset(MediaBucks, COMPANY=="WallStreetJournal")
 ```
 
 ```{r}
+```
+
+```{r}
 summary(WSJ$Salary)
 ```
 
@@ -267,10 +270,32 @@ summary(Reporters$Salary)
 
 Questions:
 
-    1: Who is making $230,504 as a reporter???   
-    2: Make a table for editors, figure out medians.   
+    1: Who is making $230,504 as a reporter??? 
+```{r}
+Reporters %>% 
+  select(TITLE, COMPANY, Salary) %>% 
+  filter(Salary==230504)
+
+```
+    2: Make a table for editors, figure out medians.  
+```{r}
+editors <- subset(MediaBucks, grepl("?ditor", TITLE))
+summary(editors$Salary)
+
+```
+    
     3: Find highest paid editor. Resent them.   
-    4: Make a table for any position involving data  
+```{r}
+editors %>% 
+  select(TITLE, COMPANY, Salary) %>% 
+  filter(Salary==770000)
+
+```
+    4: Make a table for any position involving data
+```{r}
+data <- subset(MediaBucks, grepl("?ata", JOB_DUTIES))
+
+```
 
 Table with Black reporters at Wall Street Journal
 
@@ -343,20 +368,23 @@ This is a basic chart using ggplot. To break down the code: - These lines: Race 
     1: Build a table for NewYorkTimes employees, and determine median salary of NewYorkTimes employees   
 
 ```{r}
-NYT <- subset(MediaBucks, COMPANY=="NYT")
+NYT <- subset(MediaBucks, grepl("?NYT", COMPANY))
 summary(NYT$Salary)
 ```
 
       2: Identify title, gender and race of the highest paid position at NYT  
 
 ```{r}
-News Assistant, female, poc
+NYT %>% 
+  select(TITLE, Gender, Race, Salary) %>% 
+  filter(Salary==65000)
+
 ```
 
     3: Search for Bloomberg,  check median salary, compare to NYT results above.
 
 ```{r}
-Bloomberg <- subset(MediaBucks, COMPANY=="Bloomberg")
+Bloomberg <- subset(MediaBucks, grepl("?Bloomberg", COMPANY))
 summary(Bloomberg$Salary)
 ```
 
