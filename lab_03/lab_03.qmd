@@ -12,9 +12,9 @@ knitr::opts_chunk$set(echo = TRUE)
 options(scipen=999)
 
 # Load the tidyverse here
-
+library(tidyverse)
 # Load janitor here
-
+library(janitor)
 
 ```
 
@@ -46,10 +46,13 @@ Q1: Which five cities have the largest overall Hispanic population in 2020? Name
 
 A1:
 ```{r}
-top5_hispanic2020 <- md_race %>% 
+# top5_hispanic2020 <- md_race %>% 
+#   select(place, x2020_hispanic) %>% 
+#   slice_max(x2020_hispanic, n = 5)
+
+md_race %>% 
   select(place, x2020_hispanic) %>% 
   slice_max(x2020_hispanic, n = 5)
-
 ```
 
 Q2: Find the cities with the largest Black population and arrange the results in descending order. 
@@ -57,10 +60,15 @@ Q2: Find the cities with the largest Black population and arrange the results in
 A2:
 
 ```{r}
+# top_black <- md_race %>% 
+#   select(place, x2020_black) %>% 
+#   slice_max(x2020_black, n = 100)
+
 top_black <- md_race %>% 
   select(place, x2020_black) %>% 
-  slice_max(x2020_black, n = 100)
+  arrange(desc(x2020_black))
 
+top_black
 ```
 
 Q3: Create a table called top_hispanic that shows the top 15 communities with the largest Hispanic population in 2020, and also display the 2010 Hispanic population and the total community population for 2020. Look at your results - what stands out to you? Craft a one-paragraph story pitch for your editor. 
@@ -68,8 +76,9 @@ Q3: Create a table called top_hispanic that shows the top 15 communities with th
 A3:
 
 ```{r}
-top_hispanic <- md_race %>% 
-  select(place, x2020_hispanic, x2010_hispanic, x2020_total) %>% 
+top_hispanic <- md_race %>%
+  select(place, x2020_hispanic, x2010_hispanic, x2020_total) %>%
+  # arrange(desc(x2020_hispanic)) %>%  not necessary because slice_max descends automatically
   slice_max(x2020_hispanic, n = 15)
 
 ```
