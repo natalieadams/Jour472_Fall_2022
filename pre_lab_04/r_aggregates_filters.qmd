@@ -285,6 +285,18 @@ Nearly half of Baltimore City neighborhoods have a median income less than $50,0
 
 Answer this question in English: Write in Elms
 
+```{r}
+baltcity_income <- baltcity_income %>% 
+  mutate(diff_2020 = (x2020-x2010))
+
+baltcity_income
+```
+```{r}
+baltcity_income <- baltcity_income %>% 
+  mutate(percent_change = (x2020-x2010)/x2010)
+
+baltcity_income
+```
 
 
 ```
