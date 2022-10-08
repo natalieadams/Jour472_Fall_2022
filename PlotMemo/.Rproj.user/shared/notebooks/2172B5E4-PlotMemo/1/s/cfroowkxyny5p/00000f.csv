@@ -1,0 +1,18 @@
+"0","med_income <- read_csv(""Median_Household_Income.csv"")"
+"2","[1mRows: [22m[34m55[39m [1mColumns: [22m[34m16[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m─────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m  (2): CSA2010, CSA2020
+[32mdbl[39m (14): OBJECTID, mhhi10, mhhi11, mhhi12, mhhi13, mhhi1..."
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","crime <- read_csv(""Crime_Rate.csv"")"
+"2","[1mRows: [22m[34m55[39m [1mColumns: [22m[34m16[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m─────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m  (2): CSA2010, CSA2020
+[32mdbl[39m (14): OBJECTID, crime10, crime11, crime12, crime13, c..."
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."

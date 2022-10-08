@@ -1,0 +1,8 @@
+"0","# Turn off scientific notation"
+"0","options(scipen=999)"
+"0",""
+"0","# Load the tidyverse,rvest,janitor"
+"0","library(tidyverse)"
+"0","library(rvest)"
+"0","library(janitor)"
+"0","library(ggplot2)"
