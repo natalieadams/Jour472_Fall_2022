@@ -8,23 +8,31 @@ editor: visual
 
 Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
 
-
 ## Load libraries and establish settings
+
 ```{r}
 # Turn off scientific notation
 options(scipen=999)
 
-# Load the tidyverse,rvest,janitor
+# Load the tidyverse and janitor
 library(tidyverse)
-library(rvest)
 library(janitor)
 library(ggplot2)
 ```
 
 ## Load data
+
+Median household income data for Baltimore neighborhoods (community statistical area) from 2010 to 2020 from Vital Signs Open Data Portal. (https://vital-signs-bniajfi.hub.arcgis.com/datasets/bniajfi::median-household-income-community-statistical-area/about)
+
+Part 1 crime rate data for Baltimore neighborhoods (community statistical area) from Vital Signs Open Data Portal captures incidents of homicide, rape, aggravated assault, robbery, burglary, larceny and auto theft per 1,000 people that are reported to the Police Department from 2010 to 2020. (https://vital-signs-bniajfi.hub.arcgis.com/datasets/bniajfi::part-1-crime-rate-per-1000-residents-community-statistical-area/about)
+
+Variable "CSA" is the community statistical area or neighborhood, "mhhi" is the median household income by year and "crime" is the crime rate by year.
+
 ```{r}
+# Median household income for Baltimore neighborhoods from 2010 to 2020
 med_income <- read_csv("Median_Household_Income.csv")
 
+# Crime rate data for Baltimore neighborhoods from 2010 to 2020
 crime <- read_csv("Crime_Rate.csv")
 
 ```
@@ -34,33 +42,47 @@ crime <- read_csv("Crime_Rate.csv")
 I made these tables to get an idea of the neighborhoods with the lowest income and neighborhoods with the highest crime to see if there was a clear overlap. About half of the 15 neighborhoods with the lowest income were also in the top 15 with the highest crime.
 
 ```{r}
+# 15 neighborhoods with the lowest median household income  in 2020
 med_income_2020 <- med_income %>% 
   select(CSA2020, mhhi20) %>% 
   arrange(desc(mhhi20)) %>% 
   slice_min(mhhi20, n=15)
 
+# 15 neighborhoods with the highest crime rate in 2020
 crime_2020 <- crime %>% 
   select(CSA2020, crime20) %>% 
   arrange(desc(crime20)) %>% 
   slice_max(crime20, n=15)
 
-low_income15_high_crime15 <- cbind.data.frame(med_income_2020, crime_2020)
-low_income15_high_crime15 <- janitor::clean_names(low_income15_high_crime15)
-
+# Neighborhoods that are in both the 15 neighborhoods with the lowest median household income and 15 neighborhoods with the highest crime rate in 2020
+top_low_income_high_crime <- med_income_2020 %>%
+  inner_join(crime_2020, by="CSA2020")
 ```
 
-##Do neighborhoods with less than national average median household incomes ($67,521 in 2020) have more, less or equal crime (47.7 national crime rate) to neighborhoods with more than national average median household incomes in 2020?
+##Do neighborhoods with less than national average median household incomes have more, less or equal crime to neighborhoods with more than national average median household incomes in 2020?
+
+The national average median household income in 2020 was $67,521 according to the U.S. Census. (https://www.census.gov/library/publications/2021/demo/p60-273.html)
+
+The national average overall crime rate in 2022 was 47.7 according to the World Population Review. (https://worldpopulationreview.com/country-rankings/crime-rate-by-country)
+
+Low income is characterized as a neighborhood with a median household income below the national average $67,521.
+
+High income is characterized as a neighborhood with a median household income equal to or above the national average $67,521.
+
+Low crime is characterized as a neighborhood with a crime rate below the national average 47.7.
+
+High crime is characterized as a neighborhood with a crime rate equal to or above the national average 47.7.
 
 High income neighborhoods tend to have low crime. Only two high income neighborhoods have high crime, while 11 high income neighborhoods have low crime. Low income neighborhoods are more evenly split. There are 23 low income neighborhoods with high crime and 19 low income neighborhoods with low crime. I would say this shows that high income neighborhoods are more likely to have low crime and low income neighborhoods are just slightly more likely to have high crime.
 
 ```{r}
+# joining and cleaning tables
 test <- cbind.data.frame(med_income, crime)
-test <- janitor::clean_names(test)
-  
-test2 <- test %>% 
+test <- janitor::clean_names(test) %>% 
   select(csa2020, mhhi20, crime20)
 
-main <- test2 %>%
+# master table with all of the neighborhoods, median household incomes and crime rates for 2020 and a label of high or low income and high or low crime for each neighborhood
+main <- test %>%
   mutate(
     income_level = case_when(
         mhhi20 < 67521 ~ "low_income",
@@ -69,23 +91,27 @@ main <- test2 %>%
   ) %>% 
     mutate(
     crime_level = case_when(
-        crime20 <= 47.7 ~ "low_crime",
-        crime20 > 47.7 ~ "high_crime"
+        crime20 < 47.7 ~ "low_crime",
+        crime20 >= 47.7 ~ "high_crime"
       )
   ) 
 
+# neighborhoods that are below the national average median household income and above the national average crime rate
 low_income_high_crime <- main %>% 
   filter(income_level == "low_income") %>% 
   filter(crime_level == "high_crime")
 
+# neighborhoods that are below the national average median household income and below the national average crime rate
 low_income_low_crime <- main %>% 
   filter(income_level == "low_income") %>% 
   filter(crime_level == "low_crime")
 
+# neighborhoods that are above the national average median household income and above the national average crime rate
 high_income_high_crime <- main %>% 
   filter(income_level == "high_income") %>% 
   filter(crime_level == "high_crime")
 
+# neighborhoods that are above the national average median household income and below the national average crime rate
 high_income_low_crime <- main %>% 
   filter(income_level == "high_income") %>% 
   filter(crime_level == "low_crime")
@@ -97,13 +123,17 @@ high_income_low_crime <- main %>%
 There is a moderate correlation between income and crime in Baltimore, with a correlation of 0.5.
 
 ```{r}
+# correlation calculation
 cor(main$mhhi20, main$crime20)
 
 ```
 
+##Scatter plot
 
+This scatter plot visualizes that there is a slight negative correlation between median household income and crime rate in Baltimore neighborhoods in 2020.
 
 ```{r}
+# scatter plot of median household income data and crime rates for Baltimore neighborhoods in 2020
 gg <- ggplot(main, aes(x=mhhi20, y=crime20)) + 
   geom_point(aes(col=mhhi20)) + 
   geom_smooth(method="loess", se=F) + 
@@ -112,10 +142,8 @@ gg <- ggplot(main, aes(x=mhhi20, y=crime20)) +
   labs(subtitle="Baltimore, Maryland 2020", 
        y="Crime Rate", 
        x="Median Household Income", 
-       title="Correlation Between Income and Crime Rate", 
+       title="Median Household Income and Crime Rate", 
        caption = "Graphic by Natalie Adams")
 
 plot(gg)
-
-
 ```
