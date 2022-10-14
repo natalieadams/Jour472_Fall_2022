@@ -8,6 +8,9 @@ editor: visual
 
 Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
 
+##Reporting Memo and Tweets
+https://docs.google.com/document/d/1BL8Lupe_DrT5eeYl4gNdoW6bAyUgQWnFcI3Im9klWPo/edit?usp=sharing
+
 ## Load libraries and establish settings
 
 ```{r}
@@ -61,13 +64,13 @@ top_low_income_high_crime <- med_income_2020 %>%
 
 ##Do neighborhoods with less than national average median household incomes have more, less or equal crime to neighborhoods with more than national average median household incomes in 2020?
 
-The national average median household income in 2020 was $67,521 according to the U.S. Census. (https://www.census.gov/library/publications/2021/demo/p60-273.html)
+The national average median household income in 2020 was \$67,521 according to the U.S. Census. (https://www.census.gov/library/publications/2021/demo/p60-273.html)
 
 The national average overall crime rate in 2022 was 47.7 according to the World Population Review. (https://worldpopulationreview.com/country-rankings/crime-rate-by-country)
 
-Low income is characterized as a neighborhood with a median household income below the national average $67,521.
+Low income is characterized as a neighborhood with a median household income below the national average \$67,521.
 
-High income is characterized as a neighborhood with a median household income equal to or above the national average $67,521.
+High income is characterized as a neighborhood with a median household income equal to or above the national average \$67,521.
 
 Low crime is characterized as a neighborhood with a crime rate below the national average 47.7.
 
@@ -120,7 +123,7 @@ high_income_low_crime <- main %>%
 
 ##Is there a correlation between crime and income in Baltimore neighborhoods?
 
-There is a moderate correlation between income and crime in Baltimore, with a correlation of 0.5.
+There is a moderate correlation between income and crime in Baltimore, with a correlation of -0.5.
 
 ```{r}
 # correlation calculation
