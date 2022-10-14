@@ -12,6 +12,14 @@ When you are finished, commit changes and push to your personal GitHub repo, the
 ## Load libraries and establish settings
 **Task**: Make a code block and load janitor and the tidyverse
 
+```{r}
+library(janitor)
+library(tidyverse)
+
+options(scipen=999)
+
+```
+
 ## Load data
 
 For today's lab, we are using the DEA's ARCOS database, which tracks shipments of opioids and other controlled substances from manufacturers to pharmacies.  As we will read this week, the Washington Post used this data to show which communities were flooded by opioids during the death and overdose crisis of the last two decades. 
@@ -25,11 +33,68 @@ There are four tables in the data folder.
 
 **Task**: Create a codeblock and load the four dataframes using appropriate names below.
 
+```{r}
+# opiod data
+opioids <- read_csv("data/arcos.csv")
+
+# county population data
+county_pop <- read_csv("data/county_population_2014.csv")
+
+# state population data
+state_pop <- read_csv("data/state_population_2014.csv")
+
+# state name and abbreviation data
+state_name <- read_csv("data/state_crosswalk.csv")
+
+```
+
 ## Questions
 **Task** Create codeblocks in the space below and answer the questions. 
 
 **Q1** Which county or city received the most total opioid pills per person? Add up all the pills between 2006 and 2014 when doing this calculation. How many total pills, and what was the per person rate?
 
+Norton City, Virginia, received the most pills per person at 2,629. Total pills was more than 10.5 million.
+
+```{r}
+updated_opioid_table <- opioids %>% 
+  group_by(countyfips, buyer_county, buyer_state) %>% 
+  summarise(total_pills = sum(total_pills)) %>% 
+  inner_join(county_pop, by = c("countyfips" = "geoid")) %>% 
+  mutate(pills_per_person = (total_pills/total_population_2014))
+
+```
+
 **Q2** Which U.S. state had the highest number of opioid pills per person for pills shipped in 2014? How many total pills, and what was the per person rate? How did that compare to Washington, D.C.?
 
+West Virginia had the highest number of pills per person in 2014 at 65 with the total number of pills being more than 120 million.
+
+```{r}
+state_table <- state_pop %>%
+  inner_join(state_name, c("state" = "state_name"))
+
+state_opioid_table <- opioids %>%
+  filter(year == 2014) %>%
+  group_by(buyer_state) %>%
+  summarise(total_pills = sum(total_pills)) %>%
+  inner_join(state_table, c("buyer_state" = "state_abb")) %>%
+  mutate(pills_per_person = (total_pills/total_population_2014))
+
+summary(state_opioid_table, pills_per_person)
+  
+DC <- opioids %>%
+  mutate(
+    buyer_county = case_when(
+      buyer_county == 'DISTRICT OF COLUMBIA' ~ "District of Columbia",
+    )
+  ) %>% 
+  filter(buyer_county == "District of Columbia") %>% 
+  group_by(buyer_county, buyer_state) %>%
+  summarise(total_pills = sum(total_pills)) %>% 
+  inner_join(state_pop, c("buyer_county" = "state")) %>% 
+  mutate(pills_per_person = (total_pills/total_population_2014))
+
+```
+
 **Q3** Write a sentence that could be dropped in as the lede of a news story from the finding in question two. 
+
+Washington, D.C., has three times more opioid pills per capita than the average for the 50 states. The district has 119 pills per capita, while West Virginia, the state with the highest number of pills per capita, has 65.
