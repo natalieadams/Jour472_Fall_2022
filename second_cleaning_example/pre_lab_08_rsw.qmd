@@ -1,0 +1,92 @@
+# Cleaning data with R instead of Google Sheets 
+
+Rob Wells, Oct 18, 2022
+
+Earlier this semester, we cleaned data using Google Sheets. Here's how we can do the same thing in R - and faster.
+
+We will use a version of the Washington Post [police shooting data](https://docs.google.com/spreadsheets/d/13RohaTGgnUhxw5KMKT_BhZe45QQDz62gYbagwoztpLk/edit?usp=sharing) to conduct these exercises.
+
+```{r}
+library(tidyverse)
+
+```
+
+```{r}
+police <- read_csv("Police Shootings to Clean3.csv")
+
+```
+
+### Text to columns
+
+We want to split up the date field into day, month and year. Currently, the format is 2015-01-02. Luckily, the fields all share a common separator
+
+```{r}
+police <- police %>% 
+  mutate(date2 = date)
+
+police <- separate(data = police, col = date2, into = c("year", "day", "month"), sep = "-", extra = "merge", fill = "right")
+
+```
+
+### Normalizing
+
+Scroll down the race_ethnicity column and you will see a number of different categories for the same thing: white, White, non Hispanic and Black, African Am. To see all the variations of categorical variables, create a filter and [check the different variables](assets/variables_sheets.gif){width="100%"}
+
+This presents a big problem when you are trying to group and summarize based on these variable names. See [this chart](assets/bad_total_sheets.png){width="100%"}
+
+### How Dirty Is It?
+```{r}
+police %>% 
+  count(race_ethnicity )
+
+```
+
+We see white totals 44 and White, non Hispanic total 3,136. We want those to be together -- the total is 3,180 -- because they are the same thing. Also note that African Am totals 29 and Black totals 1,645, and we would want to combine those as well.
+
+Let's fix it!
+
+Renaming variables. We will rename all "white" as "White, non Hispanic"
+-  Filter race_ethnicity (Column K) to white 
+-  in race_ethnicity2, write "White, non Hispanic" in the first column and copy down the list
+
+### Lowercase or Uppercase character conversion
+
+Create a filter and notice two variations on Native American: NativeAm and nativeam. You can resolve these differences easily by converting all to Upper or Lower case text using the =UPPER or =LOWER functions.
+
+-  To convert NativeAm to lower case, filter on race_ethnicity (Column K) for NativeAm.
+
+```{r}
+police <- police %>%
+  mutate(race_ethnic2 = tolower(race_ethnicity)) %>%
+  mutate(race_ethnic2 = case_when(
+    str_detect(race_ethnic2, "african am") ~ "black",
+    str_detect(race_ethnic2, "white, non hispanic") ~ "white",
+    TRUE ~ race_ethnic2
+  ))
+
+```
+
+### How Dirty Is It?
+```{r}
+police %>% 
+  count(race_ethnic2)
+
+```
+
+
+
+### White space
+
+One obnoxious feature of spreadsheet data is the invisible "white space" or hidden character or carriage returns that can impede your ability to group and summarize variables. Look at the age column. See how some numbers are flush left while most are flush right. The flush left data has hidden white space. You can fix this by clicking on individual cells and deleting the space around the number or you can do it with a function.
+
+Note how all of the values have been normalized.
+
+These are some of the basic go-to tools for data cleaning in Google Sheets, which can be adapted to Excel, R and other programming languages. 
+
+
+```{r}
+#trim and clean data - remove punctuation
+police$race_ethic2 <- str_trim(police$race_ethic2)
+
+```
+
