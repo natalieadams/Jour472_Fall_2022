@@ -22,6 +22,9 @@ library(ggplot2)
 This data came from The LA Times GitHub and was sourced from the city attorney's office and public records on payouts and cases filed by department from 2005 to 2018.
 
 ```{r}
+# Total payouts by year
+payouts <- read.csv("payouts.csv")
+
 # Total payouts by department
 department_totals <- read.csv("department-totals.csv")
 
@@ -34,6 +37,26 @@ case_types <- read.csv("casetypes.csv")
 # Cleaned department data
 departments <- read.csv("departments.csv")
 ```
+
+##Cleaning total payout data
+```{r}
+payouts <- payouts %>%
+  mutate(total = as.numeric(total))
+```
+
+##Payout changes over time bar chart
+```{r}
+payouts %>%
+  ggplot() +
+  geom_bar(aes(x=year, weight=total))+
+labs(subtitle="Los Angeles, 2005-2018", 
+       y="Total Payouts (in $)", 
+       x="Year", 
+       title="Total cost of Legal Payouts", 
+       caption = "2018 is a projected number")
+```
+We see a small spike in the amount of legal payouts in 2010 and again in 2016, but 2017 is the outlier of this data. The city of Los Angeles had to give out over $200 million in legal payouts in 2017 alone. We are projected to see this number dip back down to a less irregular number in 2018. 
+
 
 ##Departments with the highest and second highest sum of payouts
 
