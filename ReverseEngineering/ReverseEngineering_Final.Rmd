@@ -1,0 +1,225 @@
+---
+title: "Reverse Engineering"
+output: html_notebook
+---
+## About this notebook
+Created by Natalie Adams, Matthew Haraden and Kevin McNulty.
+
+We reverse engineered the data analysis produced by The Los Angeles Times' story "L.A. is slammed with record costs for legal payouts" from 2018 (https://www.latimes.com/local/lanow/la-me-ln-city-payouts-20180627-story.html).
+
+The LA Times said it obtained its data from the city attorney’s office and public records. The raw data showed the case types, departments and payouts and the analysis showed department totals and type totals for cases.
+
+The first important piece of analysis is about how payouts changed over time.
+
+“While the total number of payouts has dipped over time, the average amount has increased. Last budget year, the city paid out 30 settlements of $1 million or more — five times as many as a decade before.”
+
+It is important to show change over time because it shows why the numbers are intriguing and why people should care. The Los Angeles Times found there have been fewer payouts over time, but those settlements are worth increasing amounts of money. This change is intriguing because you would expect fewer payouts to be worth less money. This is something that should be investigated to figure out why this is happening and that’s what The LA Times did.
+
+Another important piece of analysis is about the department with the highest total amount in payouts.
+
+“Thousands of legal battles involving the Los Angeles Police Department, including a rash of recent settlements over police shootings and wrongful imprisonment, have added up to more than 40% of the total — a higher sum than any other city department, the analysis showed. That includes more than $24 million paid to two men who were freed after decades in prison, along with lawsuits over arrests, injuries, car crashes and alleged retaliation and discrimination against its own employees.”
+
+The LAPD had the highest total amount in payouts at more than 40% of the total, which was discovered through the analysis. When one department accounts for nearly half of the total amount paid in settlements, that’s something to investigate to figure out why LAPD produces the highest payouts. Does it have the most cases filed against it? Why? Does it have fewer cases against it but more of them are awarded money? Why?
+
+Another important piece of analysis is about the department with the second highest total amount in payouts. The LA Times found the Public Works Department had the highest number of cases and the second highest total amount in payouts. 
+
+“Lawsuits tied to the city departments that oversee its streets and sidewalks, including the Bureau of Street Services and the Department of Transportation, accounted for a growing share. Legal payouts for “dangerous conditions” have rivaled and, last budget year, even exceeded the cost of lawsuits over police misconduct, the analysis found.”
+
+This is interesting because it has more cases than the LAPD but the total amount in payouts is less than the LAPD.
+
+The last two important pieces of analysis were about the most common types of cases. The first is from people injured or killed by crossing streets. Both of these were discovered through the data analysis.
+
+“Many cases have arisen from people being wounded or killed while crossing city streets: In recent years, the city agreed to pay $15 million to end a legal battle over a man who was gravely injured while crossing Franklin Avenue in Hollywood, another $15 million to the family of two girls hit in a North Hollywood crosswalk and $9.5 million to the family of a teenage girl fatally struck by a taxi near Dockweiler State Beach.”
+
+The second is from people injured while riding bicycles.
+
+“The surge also has included a boom in payouts tied to bicycle crashes.”
+
+These are important because it shows the types of cases that are most commonly filed. It’s important to see how people are being injured or affected that leads to these cases and can show trends. It could show a relationship to department totals too and help explain why some departments have more cases filed against them than others.
+ 
+## Load libraries and establish settings
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse, janitor and ggplot
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+```
+
+##Load data
+
+This data came from The LA Times GitHub and was sourced from the city attorney's office and public records on payouts and cases filed by department from 2005 to 2018. The LA Times cleaned and organized the original data it obtained and both are published on GitHub (https://github.com/datadesk/la-settlements-analysis).
+
+#Wells comment - There are two sheets on the payouts. You needed to specify which one you were using. put the url for the LA Times github
+
+```{r}
+# Total payouts by year
+payouts <- read.csv("payouts.csv") %>%
+  clean_names()
+
+payouts$total <- gsub("[[:punct:]]", "", payouts$total)
+
+
+
+
+# Total payouts by department
+department_totals <- read.csv("department-totals.csv")
+
+# Total payouts by case
+type_totals <- read.csv("type-totals.csv")
+
+# Cleaned case types data
+case_types <- read.csv("casetypes.csv")
+
+# Cleaned department data
+departments <- read.csv("departments.csv")
+```
+
+##Cleaning total payout data
+
+#Wells comment: code fails because total column name is lowercase. Perhaps you cleaned the names at some point but didn't put that in
+
+#Wells comment - this code fails. It wipes out the data in total. find another strategy to clean it up
+```{r}
+payouts <- payouts %>%
+  mutate(total = as.numeric(total))
+```
+#Wells comment - this code fails as well. year is not found.
+#Get rid of the total
+
+##Payout changes over time bar chart
+
+We see a small spike in the amount of legal payouts in 2010 and again in 2016, but 2017 is the outlier of this data. The city of Los Angeles had to give out over $200 million in legal payouts in 2017 alone. We are projected to see this number dip back down to a less irregular number in 2018.
+
+```{r}
+payouts %>%
+  ggplot() +
+  geom_bar(aes(x=fiscal_year, weight=total))+
+labs(subtitle="Los Angeles, 2005-2018", 
+       y="Total Payouts (in $)", 
+       x="Year", 
+       title="Total cost of Legal Payouts", 
+       caption = "2018 is a projected number")
+```
+
+##Departments with the highest and second highest sum of payouts
+
+The LAPD had the highest sum of payouts at $374 million or 42% of the $880 million in total payouts from 2005 to 2018. The public works department had the second highest sum of payouts at $207 million or 23% of the $880 million in total payouts.
+
+```{r}
+# Top two departments with the highest sum of payouts
+department_totals %>% 
+  select(latimes_department, amount, amount_percent) %>%   
+  slice_max(amount, n=2)
+
+```
+
+##Visualization of departments with the highest sums of payouts
+
+This visualization shows how much more the LAPD's total amount of payouts is compared to other departments. It is nearly twice as much as that of Public Works, the department with the second highest total amount of payouts. The graph shows the five departments with the highest total amount of payouts and all other 33 departments combined.
+
+```{r}
+# Top 5 departments with the highest payout amounts
+department_totals_top_amount <- department_totals %>%
+  select(latimes_department, amount, amount_percent) %>% 
+  slice_max(amount, n=5)
+
+# Departments not in the top 5 relabeled in a new column as other
+department_totals_amount_other <- department_totals %>%
+  select(latimes_department, amount, amount_percent) %>%
+  mutate(
+    other_department = case_when(
+    amount < 44000000 ~ "OTHER",
+    amount > 44000000 ~ latimes_department
+    )
+  ) 
+
+# Dataframe of other departments not in the top 5
+other_departments_amount <- department_totals_amount_other %>%
+  select(latimes_department, amount, amount_percent, other_department) %>%
+  filter(other_department == "OTHER")
+
+# Sum of other departments payout amounts
+sum(other_departments_amount$amount)
+
+# Sum of other departments payout amount percent
+sum(other_departments_amount$amount_percent)
+
+#Dataframe with the top 5 departments with the highest payout amounts and all other departments combined
+department_totals_amount_condensed <- department_totals_top_amount %>% 
+  add_row(latimes_department="OTHER", amount=83109555, amount_percent=0.09436892)
+
+# Bar graph of top 5 departments with the highest payout amounts and all other departments combined
+department_totals_amount_condensed %>% 
+  ggplot() +
+  geom_bar(aes(x=reorder(latimes_department, amount), weight=amount)) +
+  coord_flip() +
+  labs(subtitle="Los Angeles, 2005-2018", 
+       y="Total Payouts (in $)", 
+       x="Department", 
+       title="Total Payout Amounts by Department", 
+       caption = "Graphic by Natalie Adams")
+
+```
+
+##Department with the highest and second highest number of payouts
+
+The public works department had the highest number of payouts at 11,000 or 59% of the 18,000 total payouts from 2005 to 2018. The LAPD had the second highest number of payouts at almost 4,000 or 20% of the 18,000 total payouts.
+
+```{r}
+# Top two departments with the highest number of payouts
+department_totals %>% 
+  select(latimes_department, number, number_percent) %>% 
+  slice_max(number, n=2)
+```
+
+##Visualization of the departments with the highest numbers of payouts
+
+This visualization shows how many more cases the Public Works Department has compared to other departments. It is nearly three times as much as the LAPD, the department with the second highest number of cases. The graph shows the five departments with the highest number of cases and all other 33 departments combined.
+
+```{r}
+# Top 5 departments with the highest number of payouts
+department_totals_top_number <- department_totals %>%
+  select(latimes_department, number, number_percent) %>% 
+  slice_max(number, n=5)
+
+# All other departments combined
+department_totals_number_other <- department_totals %>%
+  select(latimes_department, number, number_percent) %>% 
+  mutate(
+    other_department = case_when(
+    number < 780 ~ "OTHER",
+    number > 780 ~ latimes_department
+    )
+  ) 
+
+# Dataframe of other departments not in the top 5
+other_departments_number <- department_totals_number_other %>% 
+  select(latimes_department, number, number_percent, other_department) %>%
+  filter(other_department == "OTHER")
+
+# Sum of other departments number of payouts
+sum(other_departments_number$number)
+
+# Sum of other departments number of payouts percent
+sum(other_departments_number$number_percent)
+
+# Dataframe with the top 5 departments with the highest number of payouts and all other departments combined
+department_totals_number_condensed <- department_totals_top_number %>%
+  add_row(latimes_department="OTHER", number=981, number_percent=0.05245709)
+
+# Bar graph of top 5 departments with the highest number of payouts and all other departments combined
+department_totals_number_condensed %>%
+  ggplot() +
+  geom_bar(aes(x=reorder(latimes_department, number), weight=number)) +
+  coord_flip() +
+  labs(subtitle="Los Angeles, 2005-2018",
+       y="Total Number of Payouts",
+       x="Department",
+       title="Total Number of Payouts by Department",
+       caption = "Graphic by Natalie Adams")
+
+```  
+

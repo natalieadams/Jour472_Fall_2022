@@ -1,0 +1,187 @@
+---
+title: "Reverse Engineering"
+output: html_notebook
+---
+#Wells comment
+#Who are the authors of this notebook? What is the point of this exercise? Tell us what is happening and who is doing it.
+
+
+#Delete this - not needed: 
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+ 
+
+## Load libraries and establish settings
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse, janitor and ggplot
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+```
+
+##Load data
+#Wells comment - provide the URL for the GitHub so another person can replicate your findings.
+
+This data came from The LA Times GitHub and was sourced from the city attorney's office and public records on payouts and cases filed by department from 2005 to 2018.
+
+#Wells comment - There are two sheets on the payouts. You needed to specify which one you were using. put the url for the LA Times github
+
+
+```{r}
+# Total payouts by year
+payouts <- read.csv("payouts.csv") %>% 
+  clean_names()
+
+payouts$total <- gsub("[[:punct:]]", "", payouts$total)
+
+
+
+
+# Total payouts by department
+department_totals <- read.csv("department-totals.csv")
+
+# Total payouts by case
+type_totals <- read.csv("type-totals.csv")
+
+# Cleaned case types data
+case_types <- read.csv("casetypes.csv")
+
+# Cleaned department data
+departments <- read.csv("departments.csv")
+```
+
+##Cleaning total payout data
+
+#Wells comment: code fails because total column name is lowercase. Perhaps you cleaned the names at some point but didn't put that in
+
+#Wells comment - this code fails. It wipes out the data in total. find another strategy to clean it up
+```{r}
+payouts <- payouts %>%
+  mutate(total = as.numeric(total))
+```
+#Wells comment - this code fails as well. year is not found.
+#Get rid of the total
+
+##Payout changes over time bar chart
+```{r}
+payouts %>%
+  ggplot() +
+  geom_bar(aes(x=fiscal_year, weight=total))+
+labs(subtitle="Los Angeles, 2005-2018", 
+       y="Total Payouts (in $)", 
+       x="Year", 
+       title="Total cost of Legal Payouts", 
+       caption = "2018 is a projected number")
+```
+We see a small spike in the amount of legal payouts in 2010 and again in 2016, but 2017 is the outlier of this data. The city of Los Angeles had to give out over $200 million in legal payouts in 2017 alone. We are projected to see this number dip back down to a less irregular number in 2018. 
+
+
+##Departments with the highest and second highest sum of payouts
+
+The LAPD had the highest sum of payouts at $374 million or 42% of the $880 million in total payouts from 2005 to 2018. The public works department had the second highest sum of payouts at $207 million or 23% of the $880 million in total payouts.
+
+#Wells comment - good, nice job
+
+```{r}
+# Top two departments with the highest sum of payouts
+department_totals %>% 
+  select(latimes_department, amount, amount_percent) %>% 
+  slice_max(amount, n=2)
+
+sum(department_totals$amount)
+```
+
+#Wells comment - see note in this chunk. Major fix required
+
+##Visualization of departments with the highest sums of payouts
+```{r}
+# Top 5 departments with the highest payout amounts
+department_totals_top_amount <- department_totals %>%
+  select(latimes_department, amount, amount_percent) %>% 
+  slice_max(amount, n=5)
+
+#Wells comment: this section needs a major fix. It overwrites the name of the department and you lose all of the detail
+
+# All other departments combined
+department_totals_amount_other <- department_totals %>%
+  select(latimes_department, amount, amount_percent) %>% 
+#Wells comment - at this point, use case_when to create a new column categorizing the other departments, then run a summary table to get the totals  
+  
+  slice_min(amount, n=33) %>% 
+#wells comment: overwrites the name of the department and you lose all of the detail
+  mutate(latimes_department = "OTHER") %>%
+  mutate(amount = 83109555) %>%
+  mutate(amount_percent = 0.09436892)
+
+# Removed duplicates of other departments
+department_totals_amount_other2 <- department_totals_amount_other %>% dplyr::distinct(latimes_department, amount, amount_percent)
+
+# Top 5 departments with the highest payout amounts and all other departments combined together
+department_totals_amount_condensed <- rbind.data.frame(department_totals_top_amount, department_totals_amount_other2)
+
+# Bar graph of top 5 departments with the highest payout amounts and all other departments combined
+department_totals_amount_condensed %>% 
+  ggplot() +
+  geom_bar(aes(x=reorder(latimes_department, -amount), weight=amount)) +
+  labs(subtitle="Los Angeles, 2005-2018", 
+       y="Total Payouts (in $)", 
+       x="Department", 
+       title="Total Payout Amounts by Department", 
+       caption = "Graphic by Natalie Adams")
+```
+
+##Department with the highest and second highest number of payouts
+
+The public works department had the highest number of payouts at 11,000 or 59% of the 18,000 total payouts from 2005 to 2018. The LAPD had the second highest number of payouts at almost 4,000 or 20% of the 18,000 total payouts.
+
+```{r}
+# Top two departments with the highest number of payouts
+department_totals %>% 
+  select(latimes_department, number, number_percent) %>% 
+  slice_max(number, n=2)
+
+sum(department_totals$number)
+```
+
+##Visualization of the departments with the highest numbers of payouts
+#Wells comment: provide a narrative about the conclusions of this section
+
+```{r}
+# Top 5 departments with the highest number of payouts
+department_totals_top_number <- department_totals %>%
+  select(latimes_department, number, number_percent) %>% 
+  slice_max(number, n=5)
+
+# All other departments combined
+department_totals_number_other <- department_totals %>%
+  select(latimes_department, number, number_percent) %>% 
+#Wells comment - at this point, use case_when to create a new column categorizing the other departments, then run a summary table to get the totals  
+
+  slice_min(number, n=33) %>% 
+#wells comment: overwrites the name of the department and you lose all of the detail
+
+  mutate(latimes_department = "OTHER") %>%
+  mutate(amount = 981) %>%
+  mutate(amount_percent = 0.05245709)
+
+# Removed duplicates of other departments
+department_totals_number_other2 <- department_totals_number_other %>% dplyr::distinct(latimes_department, number, number_percent)
+
+# Top 5 departments with the highest number of payouts and all other departments combined together
+department_totals_number_condensed <- rbind.data.frame(department_totals_top_number, department_totals_number_other2)
+
+#Wells comment: Add color and fix the x  axis labels so they dont overlap
+
+# Bar graph of top 5 departments with the highest number of payouts and all other departments combined
+department_totals_number_condensed %>%
+  ggplot() +
+  geom_bar(aes(x=reorder(latimes_department, -number), weight=number)) +
+  labs(subtitle="Los Angeles, 2005-2018",
+       y="Total Number of Payouts",
+       x="Department",
+       title="Total Number of Payouts by Department",
+       caption = "Graphic by Natalie Adams")
+```
+
