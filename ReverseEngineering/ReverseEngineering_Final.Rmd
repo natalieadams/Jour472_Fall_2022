@@ -67,13 +67,13 @@ departments <- read.csv("departments.csv")
 ```
 
 ##Cleaning total payout data
-
 ```{r}
 payouts <- payouts %>%
   mutate(total = as.numeric(total))
 payouts <- payouts[-14,]
 payouts <- payouts[-15,]
 ```
+
 
 ##Payout changes over time bar chart
 
@@ -192,4 +192,55 @@ department_totals_number_condensed %>%
        x="Department",
        title="Total Number of Payouts by Department",
        caption = "Graphic by Natalie Adams")
+```  
+
+##Most common types of cases
+
+From 2005-2018, traffic accidents were the most common reason for legal payouts with 9,466, or 51%, of the 18,000 total payouts. Dangerous conditions were the second-most common type with 4,647, or 25%, of the total cases, and trips and falls came in behind that with 1,764 cases, or just under 10% of the total.
+```{r}
+# Top three types of cases 
+type_totals %>% 
+  select(latimes_type, number, number_percent) %>% 
+  slice_max(number, n=3)
+```
+
+##Visualization of the most common types of cases
+
+This visualization shows that traffic accidents and dangerous conditions account for about 3/4 of the legal payouts between 2005-2018. The number of traffic accident cases is just over double the number of dangerous condition cases, and there are nearly twice as many dangerous condition cases as the bottom 13 types of cases (Other). Trip and fall cases were the third-most common type, with numbers comparable to the 13 other cases combined. 
+
+```{r}
+# Top 3 types of cases
+type_totals_top_number <- type_totals %>%
+  select(latimes_type, number, number_percent) %>% 
+  slice_max(number, n=3)
+# All other types combined
+type_totals_number_other <- type_totals %>%
+  select(latimes_type, number, number_percent) %>% 
+  mutate(
+    other_type = case_when(
+    number < 1000 ~ "Other",
+    number > 1000 ~ latimes_type
+    )
+  ) 
+# Dataframe of other types not in the top 3
+other_types_number <- type_totals_number_other %>% 
+  select(latimes_type, number, number_percent, other_type) %>%
+  filter(other_type == "Other")
+# Sum of all other types
+sum(other_types_number$number)
+# Sum of all other types percent
+sum(other_types_number$number_percent)
+# Dataframe with the top 3 types with the highest number of cases and all other types combined
+type_totals_number_condensed <- type_totals_top_number %>%
+  add_row(latimes_type="Other", number=2521, number_percent=0.1348056)
+# Bar graph of top 3 types with the highest number of cases and all other cases combined
+type_totals_number_condensed %>%
+  ggplot() +
+  geom_bar(aes(x=reorder(latimes_type, number), weight=number)) +
+  coord_flip() +
+  labs(subtitle="Los Angeles, 2005-2018",
+       y="Total Number of Cases",
+       x="Type of Case",
+       title="Total Number of Cases by Type",
+       caption = "Graphic by Kevin McNulty")
 ```  
