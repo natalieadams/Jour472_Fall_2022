@@ -1,0 +1,177 @@
+---
+title: "Baltimore_Food_Desert"
+output: html_notebook
+---
+
+Natalie Adams and Matthew Haraden
+
+For our final project, we plan to focus on the prevalence of grocery stores in Baltimore City. Food deserts are an issue in cities, especially in low income and minority areas. We want to look at how food deserts impact Baltimore.
+
+Looking into grocery store data in Baltimore can help us determine if these stores are more accessible to people of a higher income versus people of a lower income. It can also help us see if there are any particular grocery stores that appear more often in higher income communities. The same goes for majority white and non-white majority neighborhoods. This data can be used to find possible discrepancies for grocery store locations in Baltimore.
+
+Questions:
+How many grocery stores are in low income neighborhoods?
+How many grocery stores are in high income neighborhoods?
+How many grocery stores are in majority non-white neighborhoods?
+How many grocery stores are in majority white neighborhoods?
+How does this compare to convenience stores?
+
+Things to Consider:
+How to define high and low income
+How to define majority white and non-majority white
+
+Grocery Datasets: 
+Supermarkets, Small Grocery Stores and Convenience Stores in Maryland
+https://data-clf.hub.arcgis.com/datasets/cce1f648db4b41acafdd66e45d8ad529_595/explore?location=38.803090%2C-77.248650%2C8.00&showTable=true 
+
+Income Datasets:
+https://vital-signs-bniajfi.hub.arcgis.com/datasets/bniajfi::median-household-income-community-statistical-area/explore?location=39.284832%2C-76.620524%2C12.52&showTable=true
+
+Race Datasets:
+https://vital-signs-bniajfi.hub.arcgis.com/datasets/bniajfi::total-population/explore?layer=0&location=39.284832%2C-76.620524%2C12.52&showTable=true
+https://vital-signs-bniajfi.hub.arcgis.com/datasets/bniajfi::percent-of-residents-white-caucasian-non-hispanic-community-statistical-area-1/explore?location=39.284832%2C-76.620524%2C12.52
+https://vital-signs-bniajfi.hub.arcgis.com/datasets/bniajfi::percent-of-residents-black-african-american-non-hispanic-community-statistical-area/explore?location=39.284832%2C-76.620524%2C12.52
+​​https://vital-signs-bniajfi.hub.arcgis.com/datasets/bniajfi::percent-of-residents-hispanic-community-statistical-area-1/explore?location=39.284832%2C-76.620524%2C12.52
+https://vital-signs-bniajfi.hub.arcgis.com/datasets/percent-of-residents-asian-non-hispanic-community-statistical-area-1/explore?location=39.284832%2C-76.620524%2C12.52&showTable=true
+https://vital-signs-bniajfi.hub.arcgis.com/datasets/bniajfi::percent-of-residents-all-other-races-hawaiian-pacific-islander-alaskan-native-american-other-race-non-hispanic-community-statistical-area-1/explore?location=39.284832%2C-76.620524%2C12.52
+https://vital-signs-bniajfi.hub.arcgis.com/datasets/bniajfi::percent-of-residents-two-or-more-races-non-hispanic-community-statistical-area-1/explore?location=39.284832%2C-76.620524%2C12.52
+
+#load libraries
+```{r}
+# turn off scientific notation
+options(scipen=999)
+
+# load janitor and tidyverse
+library(janitor)
+library(tidyverse)
+# library(ggplot2)
+
+```
+
+#load data
+Grocery store data comes from the Johns Hopkins Center for a Livable Future Open Data Portal and median household income and race data comes from the Baltimore Neighborhood Indicators Alliance Vital Signs Open Data Portal (see links above).
+
+```{r}
+# food stores in maryland
+stores <- read.csv("food_stores.csv")
+
+# median household income by baltimore neighborhood
+income <- read.csv("median_household_income.csv")
+
+# total population by baltimore neighborhood
+total_pop1 <- read.csv("total_population.csv")
+
+# white population by baltimore neighborhood
+percent_white1 <- read.csv("percent_white.csv")
+
+# black population by baltimore neighborhood
+percent_black1 <- read.csv("percent_black.csv")
+
+# hispanic population by baltimore neighborhood
+percent_hispanic1 <- read.csv("percent_hispanic.csv")
+
+# asian population by baltimore neighborhood
+percent_asian1 <- read.csv("percent_asian.csv")
+
+# other race population by baltimore neighborhood
+percent_other1 <- read.csv("percent_other.csv")
+
+# two or more races population by baltimore neighborhood
+percent_more1 <- read.csv("percent_two_or_more.csv")
+
+```
+
+#clean race data
+Cleaned the data to select just the neighborhood and 2020 population and then joined all the races together into one table. We did this because we couldn't locate a single dataframe organized by race and neighborhood, so we combined separate ones and checked to make sure the percenteges added up to 100.
+
+```{r}
+# total population by baltimore neighborhood clean
+total_pop2 <- total_pop1 %>% 
+  select(CSA2010, tpop20) %>% 
+  clean_names() %>%
+  rename(neighborhood = 1, total_pop_2020 = 2)
+
+# white population by baltimore neighborhood clean
+percent_white2 <- percent_white1 %>% 
+  select(CSA2010, pwhite20) %>% 
+  clean_names() %>%
+  rename(neighborhood = 1, percent_white = 2)
+
+# black population by baltimore neighborhood clean
+percent_black2 <- percent_black1 %>% 
+  select(CSA2010, paa20) %>% 
+  clean_names() %>%
+  rename(neighborhood = 1, percent_black = 2)
+
+# hispanic population by baltimore neighborhood clean
+percent_hispanic2 <- percent_hispanic1 %>% 
+  select(CSA2010, phisp20) %>% 
+  clean_names() %>%
+  rename(neighborhood = 1, percent_hispanic = 2)
+
+# asian population by baltimore neighborhood clean
+percent_asian2 <- percent_asian1 %>% 
+  select(CSA2010, pasi20) %>% 
+  clean_names() %>%
+  rename(neighborhood = 1, percent_asian = 2)
+
+# other race population by baltimore neighborhood clean
+percent_other2 <- percent_other1 %>% 
+  select(CSA2010, ppac20) %>% 
+  clean_names() %>%
+  rename(neighborhood = 1, percent_other = 2)
+
+# two or more races population by baltimore neighborhood clean
+percent_more2 <- percent_more1 %>% 
+  select(CSA2010, p2more20) %>% 
+  clean_names() %>%
+  rename(neighborhood = 1, percent_two_or_more = 2)
+
+# total baltimore population by race and baltimore neighborhood clean
+baltimore_population <- total_pop2 %>% 
+  inner_join(percent_white2, by="neighborhood") %>% 
+  inner_join(percent_black2, by="neighborhood") %>% 
+  inner_join(percent_hispanic2, by="neighborhood") %>% 
+  inner_join(percent_asian2, by="neighborhood") %>% 
+  inner_join(percent_other2, by="neighborhood") %>% 
+  inner_join(percent_more2, by="neighborhood")
+
+```
+
+#clean grocery store data
+Selected relevant data points, filtered it for just the Baltimore City stores and cleaned column names. Made separate dataframes for supermarkets, small grocery stores and convenience stores.
+
+```{r}
+# baltimore stores
+baltimore_stores <- stores %>% 
+  select(Main_Categ, Company_Na, County, Address, ZIP_Code, X, Y) %>% 
+  filter(County == "Baltimore City") %>% 
+  clean_names() %>%
+  rename(store_type = 1, name = 2)
+
+# baltimore supermarkets
+supermarkets <- baltimore_stores %>% 
+  filter(store_type == "Supermarket")
+
+# baltimore small grocery stores
+small_grocery <- baltimore_stores %>% 
+  filter(store_type == "Small Grocery/Corner Store")
+
+# baltimore convenience stores
+convenience_stores <- baltimore_stores %>% 
+  filter(store_type == "Convenience Store")
+
+```
+
+#clean median household income data
+Selected most recent median household income data and cleaned column names.
+
+```{r}
+# median household income by baltimore neighborhood clean
+baltimore_income <- income %>% 
+  select(CSA2020, mhhi20) %>% 
+  clean_names() %>%
+  rename(neighborhood = 1, median_income = 2)
+
+```
+
