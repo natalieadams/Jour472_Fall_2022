@@ -44,6 +44,9 @@ options(scipen=999)
 # load janitor and tidyverse
 library(janitor)
 library(tidyverse)
+library(sf)
+library(leaflet)
+library(magrittr)
 # library(ggplot2)
 
 ```
@@ -57,6 +60,9 @@ stores <- read.csv("food_stores.csv")
 
 # median household income by baltimore neighborhood
 income <- read.csv("median_household_income.csv")
+
+# baltimore neighborhoods shapefile
+neighborhoods <- st_read("income_shapefiles/median_household_income.shp")
 
 # total population by baltimore neighborhood
 total_pop1 <- read.csv("total_population.csv")
@@ -82,7 +88,7 @@ percent_more1 <- read.csv("percent_two_or_more.csv")
 ```
 
 #clean race data
-Cleaned the data to select just the neighborhood and 2020 population and then joined all the races together into one table. We did this because we couldn't locate a single dataframe organized by race and neighborhood, so we combined separate ones and checked to make sure the percenteges added up to 100.
+Cleaned the data to select just the neighborhood and 2020 population and then joined all the races together into one table. We did this because we couldn't locate a single dataframe organized by race and neighborhood, so we combined separate ones and checked to make sure the percentages added up to 100.
 
 ```{r}
 # total population by baltimore neighborhood clean
@@ -175,3 +181,115 @@ baltimore_income <- income %>%
 
 ```
 
+#clean neighborhoods shapefile
+```{r}
+# neighborhoods shapefile
+neighborhoods <- neighborhoods %>% 
+  select(CSA2020, geometry) %>% 
+  clean_names() %>%
+  rename(neighborhood = 1)
+
+```
+
+#How to define low income and high income neighborhoods?
+The median household income in Baltimore is $52,164, according to the U.S. Census Bureau. This is less than the national median household income of $65,000. We chose to use the Baltimore median household income instead of the national median household income because it is more representative of the city. We defined low income as a median household income below Baltimore's $52,164 median household income and high income as above that number.
+
+```{r}
+# classify income as high or low
+baltimore_income <- baltimore_income %>%
+  mutate(
+    income_level = case_when(
+        median_income < 52164 ~ "low",
+        median_income >= 52164 ~ "high"
+      )
+  )
+
+# filter for high income neighborhoods and add shapefile
+high_income <- baltimore_income %>% 
+  filter(income_level == "high") %>% 
+  inner_join(neighborhoods, by="neighborhood")
+
+# filter for low income neighborhoods and add shapefile
+low_income <- baltimore_income %>% 
+  filter(income_level == "low") %>% 
+  inner_join(neighborhoods, by="neighborhood")
+
+
+
+```
+
+#How many supermarkets are in low income neighborhoods?
+```{r}
+# trying to sort coordinates into neighborhoods but it's not working
+supermarkets_low_income <- supermarkets %>%
+  st_as_sf(coords = c("x", "y"), crs = 4326) %>%
+  st_intersects(low_income)
+  lapply(function(x) ifelse(length(x)==0,FALSE,TRUE)) %>%
+  unlist()
+
+supermarkets_low_income <- supermarkets %>%
+  left_join(low_income, left="FALSE")
+
+```
+
+#How many supermarkets are in high income neighborhoods?
+```{r}
+
+
+```
+
+```{r}
+# trying to sort coordinates into neighborhoods but it's not working
+
+```
+
+#plot supermarkets in baltimore
+```{r}
+ggplot()+
+geom_sf(data=neighborhoods)+
+geom_sf(data=supermarkets %>% st_as_sf(coords = c("x", "y"), crs = 4326))+
+theme_minimal()
+
+```
+
+#How many small grocery stores are in low income neighborhoods?
+```{r}
+
+
+```
+
+#How many small grocery stores are in high income neighborhoods?
+```{r}
+
+
+```
+
+#plot small grocery stores in baltimore
+```{r}
+ggplot()+
+geom_sf(data=neighborhoods)+
+geom_sf(data=small_grocery %>% st_as_sf(coords = c("x", "y"), crs = 4326))+
+theme_minimal()
+
+```
+
+#How many convenience stores are in low income neighborhoods?
+```{r}
+
+
+```
+
+#How many convenience stores are in high income neighborhoods?
+```{r}
+
+
+```
+
+#plot convenience stores in baltimore
+```{r}
+ggplot()+
+geom_sf(data=neighborhoods)+
+geom_sf(data=convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326))+
+theme_minimal()
+
+```
