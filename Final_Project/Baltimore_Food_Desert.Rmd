@@ -230,6 +230,19 @@ supermarkets_low_income <- supermarkets %>%
 supermarkets_low_income <- supermarkets %>%
   left_join(low_income, left="FALSE")
 
+# Wells code that did work
+supermarkets1 <- supermarkets %>% 
+  st_as_sf(coords = c("x", "y"), crs = 4326)
+
+# wells code that didn't work with error message
+
+#Error in st_geos_binop("intersects", x, y, sparse = sparse, prepared = prepared, : 
+#st_crs(x) == st_crs(y) is not TRUE
+#stackoverflow in this error message: https://stackoverflow.com/questions/49141192/st-intersects-errors-for-st-crsx-st-crsy-is-not-true
+
+supermarkets2 <-  neighborhoods %>% 
+  st_join(supermarkets1)
+
 ```
 
 #How many supermarkets are in high income neighborhoods?
@@ -238,13 +251,9 @@ supermarkets_low_income <- supermarkets %>%
 
 ```
 
-```{r}
-# trying to sort coordinates into neighborhoods but it's not working
-
-```
-
 #plot supermarkets in baltimore
 ```{r}
+# plot of supermarkets
 ggplot()+
 geom_sf(data=neighborhoods)+
 geom_sf(data=supermarkets %>% st_as_sf(coords = c("x", "y"), crs = 4326))+
@@ -266,6 +275,7 @@ theme_minimal()
 
 #plot small grocery stores in baltimore
 ```{r}
+# plot of small grocery stores
 ggplot()+
 geom_sf(data=neighborhoods)+
 geom_sf(data=small_grocery %>% st_as_sf(coords = c("x", "y"), crs = 4326))+
@@ -287,6 +297,7 @@ theme_minimal()
 
 #plot convenience stores in baltimore
 ```{r}
+# plot of convenience stores
 ggplot()+
 geom_sf(data=neighborhoods)+
 geom_sf(data=convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326))+
