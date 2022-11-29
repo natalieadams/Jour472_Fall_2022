@@ -40,13 +40,13 @@ https://vital-signs-bniajfi.hub.arcgis.com/datasets/bniajfi::percent-of-resident
 ```{r}
 # turn off scientific notation
 options(scipen=999)
-# load janitor and tidyverse
+# load libraries
 library(janitor)
 library(tidyverse)
 library(sf)
 library(leaflet)
 library(magrittr)
-# library(ggplot2)
+library(ggplot2)
 ```
 
 #load data
@@ -86,36 +86,43 @@ total_pop2 <- total_pop1 %>%
   select(CSA2010, tpop20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, total_pop_2020 = 2)
+
 # white population by baltimore neighborhood clean
 percent_white2 <- percent_white1 %>% 
   select(CSA2010, pwhite20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_white = 2)
+
 # black population by baltimore neighborhood clean
 percent_black2 <- percent_black1 %>% 
   select(CSA2010, paa20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_black = 2)
+
 # hispanic population by baltimore neighborhood clean
 percent_hispanic2 <- percent_hispanic1 %>% 
   select(CSA2010, phisp20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_hispanic = 2)
+
 # asian population by baltimore neighborhood clean
 percent_asian2 <- percent_asian1 %>% 
   select(CSA2010, pasi20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_asian = 2)
+
 # other race population by baltimore neighborhood clean
 percent_other2 <- percent_other1 %>% 
   select(CSA2010, ppac20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_other = 2)
+
 # two or more races population by baltimore neighborhood clean
 percent_more2 <- percent_more1 %>% 
   select(CSA2010, p2more20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_two_or_more = 2)
+
 # total baltimore population by race and baltimore neighborhood clean
 baltimore_population <- total_pop2 %>% 
   inner_join(percent_white2, by="neighborhood") %>% 
@@ -136,122 +143,163 @@ baltimore_stores <- stores %>%
   filter(County == "Baltimore City") %>% 
   clean_names() %>%
   rename(store_type = 1, name = 2)
+
 # baltimore supermarkets
-supermarkets <- baltimore_stores %>% 
-  filter(store_type == "Supermarket")
+supermarkets <- read_csv("food_stores.csv") %>% 
+  select(Main_Categ, Company_Na, County, Address, ZIP_Code, X, Y) %>% 
+  filter(County == "Baltimore City") %>% 
+  clean_names() %>%
+  rename(store_type = 1, name = 2) %>%
+  filter(store_type == "Supermarket") %>% 
+  st_as_sf(coords = c("x", "y"), crs = 4269)
+
 # baltimore small grocery stores
-small_grocery <- baltimore_stores %>% 
-  filter(store_type == "Small Grocery/Corner Store")
+small_grocery <- read_csv("food_stores.csv") %>% 
+  select(Main_Categ, Company_Na, County, Address, ZIP_Code, X, Y) %>% 
+  filter(County == "Baltimore City") %>% 
+  clean_names() %>%
+  rename(store_type = 1, name = 2) %>%
+  filter(store_type == "Small Grocery/Corner Store") %>% 
+  st_as_sf(coords = c("x", "y"), crs = 4269)
+
 # baltimore convenience stores
-convenience_stores <- baltimore_stores %>% 
-  filter(store_type == "Convenience Store")
+convenience_stores <- read_csv("food_stores.csv") %>% 
+  select(Main_Categ, Company_Na, County, Address, ZIP_Code, X, Y) %>% 
+  filter(County == "Baltimore City") %>% 
+  clean_names() %>%
+  rename(store_type = 1, name = 2) %>%
+  filter(store_type == "Convenience Store") %>% 
+  st_as_sf(coords = c("x", "y"), crs = 4269)
 ```
 
-#clean median household income data
+#clean median household income data and neighborhoods shapefile
 Selected most recent median household income data and cleaned column names.
 
-```{r}
-# median household income by baltimore neighborhood clean
-baltimore_income <- income %>% 
-  select(CSA2020, mhhi20) %>% 
-  clean_names() %>%
-  rename(neighborhood = 1, median_income = 2)
-```
-
-#clean neighborhoods shapefile
-```{r}
-# neighborhoods shapefile
-neighborhoods <- neighborhoods %>% 
-  select(CSA2020, geometry) %>% 
-  clean_names() %>%
-  rename(neighborhood = 1)
-```
-
-#How to define low income and high income neighborhoods?
 The median household income in Baltimore is $52,164, according to the U.S. Census Bureau. This is less than the national median household income of $65,000. We chose to use the Baltimore median household income instead of the national median household income because it is more representative of the city. We defined low income as a median household income below Baltimore's $52,164 median household income and high income as above that number.
 
 ```{r}
-# classify income as high or low
-baltimore_income <- baltimore_income %>%
+# Load and clean low income neighborhood shapefile
+low_income <- st_read("income_shapefiles/median_household_income.shp") %>% 
+  clean_names() %>%
+  select(csa2010, mhhi20, geometry) %>% 
+  rename(neighborhood = 1, median_income=2) %>%
   mutate(
     income_level = case_when(
         median_income < 52164 ~ "low",
         median_income >= 52164 ~ "high"
       )
-  )
-# filter for high income neighborhoods and add shapefile
-high_income <- baltimore_income %>% 
-  filter(income_level == "high") %>% 
-  inner_join(neighborhoods, by="neighborhood")
-# filter for low income neighborhoods and add shapefile
-low_income <- baltimore_income %>% 
-  filter(income_level == "low") %>% 
-  inner_join(neighborhoods, by="neighborhood")
+  ) %>% 
+  filter(income_level == "low") %>%
+  st_transform(crs=4269)
+
+# Load and clean high income neighborhood shapefile
+high_income <- st_read("income_shapefiles/median_household_income.shp") %>% 
+  clean_names() %>%
+  select(csa2010, mhhi20, geometry) %>% 
+  rename(neighborhood = 1, median_income=2) %>%
+  mutate(
+    income_level = case_when(
+        median_income < 52164 ~ "low",
+        median_income >= 52164 ~ "high"
+      )
+  ) %>% 
+  filter(income_level == "high") %>%
+  st_transform(crs=4269)
 ```
 
 #How many supermarkets are in low income neighborhoods?
 ```{r}
-# trying to sort coordinates into neighborhoods but it's not working
-supermarkets_low_income <- supermarkets %>%
-  st_as_sf(coords = c("x", "y"), crs = 4326) %>%
-  st_intersects(low_income)
-  lapply(function(x) ifelse(length(x)==0,FALSE,TRUE)) %>%
-  unlist()
-supermarkets_low_income <- supermarkets %>%
-  left_join(low_income, left="FALSE")
+# sort coordinates into low income neighborhoods
+low_income_supermarkets <- supermarkets %>%
+  st_join(low_income) %>% 
+  filter(income_level == "low")
 ```
 
 #How many supermarkets are in high income neighborhoods?
 ```{r}
-```
-
-```{r}
-# trying to sort coordinates into neighborhoods but it's not working
+# sort coordinates into high income neighborhoods
+high_income_supermarkets <- supermarkets %>%
+  st_join(high_income) %>% 
+  filter(income_level == "high")
 ```
 
 #plot supermarkets in baltimore
 ```{r}
 ggplot()+
 geom_sf(data=neighborhoods)+
-geom_sf(data=supermarkets %>% st_as_sf(coords = c("x", "y"), crs = 4326))+
-theme_minimal()
+geom_sf(data=low_income_supermarkets %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=income_level))+
+geom_sf(data=high_income_supermarkets %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=income_level))+
+theme_minimal()+
+labs(title = "Supermarkets in High and Low Income Baltimore Neighborhoods", 
+       subtitle = "Johns Hopkins and Baltimore Neighborhood Indicators Alliance Data, 2022",
+       caption = "Graphic by Natalie Adams")
 ```
 
 #How many small grocery stores are in low income neighborhoods?
 ```{r}
+# sort coordinates into low income neighborhoods
+low_income_small_grocery <- small_grocery %>%
+  st_join(low_income) %>% 
+  filter(income_level == "low")
+
 ```
 
 #How many small grocery stores are in high income neighborhoods?
 ```{r}
+# sort coordinates into high income neighborhoods
+high_income_small_grocery <- small_grocery %>%
+  st_join(high_income) %>% 
+  filter(income_level == "high")
+
 ```
 
 #plot small grocery stores in baltimore
 ```{r}
 ggplot()+
 geom_sf(data=neighborhoods)+
-geom_sf(data=small_grocery %>% st_as_sf(coords = c("x", "y"), crs = 4326))+
-theme_minimal()
+geom_sf(data=low_income_small_grocery %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=income_level))+
+geom_sf(data=high_income_small_grocery %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=income_level))+
+theme_minimal()+
+labs(title = "Small Grocery and Corner Stores in High and Low Income Baltimore Neighborhoods", 
+       subtitle = "Johns Hopkins and Baltimore Neighborhood Indicators Alliance Data, 2022",
+       caption = "Graphic by Natalie Adams")
 ```
 
 #How many convenience stores are in low income neighborhoods?
 ```{r}
+# sort coordinates into low income neighborhoods
+low_income_convenience_stores <- convenience_stores %>%
+  st_join(low_income) %>% 
+  filter(income_level == "low")
+
 ```
 
 #How many convenience stores are in high income neighborhoods?
 ```{r}
+# sort coordinates into high income neighborhoods
+high_income_convenience_stores <- convenience_stores %>%
+  st_join(high_income) %>% 
+  filter(income_level == "high")
+
 ```
 
 #plot convenience stores in baltimore
 ```{r}
 ggplot()+
 geom_sf(data=neighborhoods)+
-geom_sf(data=convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326))+
-theme_minimal()
+geom_sf(data=low_income_convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=income_level))+
+geom_sf(data=high_income_convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=income_level))+
+theme_minimal()+
+labs(title = "Convenience Stores in High and Low Income Baltimore Neighborhoods", 
+       subtitle = "Johns Hopkins and Baltimore Neighborhood Indicators Alliance Data, 2022",
+       caption = "Graphic by Natalie Adams")
 ```
+
+
 
 ```{r}
 #population status
-percent_white2 <-percent_white2 %>% 
+majority_white <- baltimore_population %>% 
   mutate(
     population_status = case_when(
         percent_white < 50 ~ "non_majority_white",
@@ -259,12 +307,12 @@ percent_white2 <-percent_white2 %>%
       )
   )
 #majority and non majority white tables
- majority_white<- percent_white2 %>% 
-  filter(population_status == "majority_white") %>% 
+ majority_white <- percent_white2 %>%
+  filter(population_status == "majority_white") %>%
   inner_join(neighborhoods, by="neighborhood")
- 
- non_majority_white<- percent_white2 %>% 
-  filter(population_status == "non_majority_white") %>% 
+
+ non_majority_white<- percent_white2 %>%
+  filter(population_status == "non_majority_white") %>%
   inner_join(neighborhoods, by="neighborhood")
 ```
 
