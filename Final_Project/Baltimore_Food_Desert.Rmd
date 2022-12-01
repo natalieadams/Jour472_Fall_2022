@@ -175,7 +175,7 @@ convenience_stores <- read_csv("food_stores.csv") %>%
 #clean median household income data and neighborhoods shapefile
 Selected most recent median household income data and cleaned column names.
 
-The median household income in Baltimore is $52,164, according to the U.S. Census Bureau. This is less than the national median household income of $65,000. We chose to use the Baltimore median household income instead of the national median household income because it is more representative of the city. We defined low income as a median household income below Baltimore's $52,164 median household income and high income as above that number.
+The median household income in Baltimore is $52,164, according to the U.S. Census Bureau. This is less than the national median household income of $65,000. We chose to use the Baltimore median household income instead of the national median household income because it is more representative of the city. We defined low income as a median household income below Baltimore's $52,164 median household income and high income as above that number. There are 32 neighborhoods characterized as low income and 23 neighborhoods characterized as high income.
 
 ```{r}
 # Load and clean low income neighborhood shapefile
@@ -207,23 +207,22 @@ high_income <- st_read("income_shapefiles/median_household_income.shp") %>%
   st_transform(crs=4269)
 ```
 
-#How many supermarkets are in low income neighborhoods?
+#How does the number of supermarkets compare in low income and high income Baltimore neighborhoods?
+There are 25 supermarkets in low income neighborhoods and 24 supermarkets in high income neighborhoods. While low income neighborhoods have one more supermarket than high income neighborhoods, there are more low income neighborhoods (32) than high income neighborhoods (23), making the ratio of supermarkets to neighborhoods greater for high income neighborhoods. There are more than seven low income neighborhoods without a supermarket. Every high income neighborhood has a supermarket, plus an additional one. This shows that high income residents have greater access to supermarkets and fresh food than low income residents.
+
 ```{r}
 # sort coordinates into low income neighborhoods
 low_income_supermarkets <- supermarkets %>%
   st_join(low_income) %>% 
   filter(income_level == "low")
-```
 
-#How many supermarkets are in high income neighborhoods?
-```{r}
 # sort coordinates into high income neighborhoods
 high_income_supermarkets <- supermarkets %>%
   st_join(high_income) %>% 
   filter(income_level == "high")
 ```
 
-#plot supermarkets in baltimore
+#plot supermarkets in baltimore based on income
 ```{r}
 ggplot()+
 geom_sf(data=neighborhoods)+
@@ -235,17 +234,15 @@ labs(title = "Supermarkets in High and Low Income Baltimore Neighborhoods",
        caption = "Graphic by Natalie Adams")
 ```
 
-#How many small grocery stores are in low income neighborhoods?
+#How does the number of small grocery and corner stores compare in low income and high income Baltimore neighborhoods?
+There are 289 small grocery/corner stores in low income neighborhoods and 115 small grocery/corner stores in high income neighborhoods. Low income neighborhoods have more than twice as many small grocery/corner stores than high income neighborhoods and have a greater ratio of small grocery/corner stores than high income neighborhoods. Small grocery/corner stores typically offer ethnic or cultural food options, such as Asian or South American. The prevalence of small grocery/corner stores in low income neighborhoods indicates a possible high non-white population in those neighborhoods. Small grocery/corner stores could also make up for the absence of access to supermarkets in these communities, although access to fresh food could still be limited.
+
 ```{r}
 # sort coordinates into low income neighborhoods
 low_income_small_grocery <- small_grocery %>%
   st_join(low_income) %>% 
   filter(income_level == "low")
 
-```
-
-#How many small grocery stores are in high income neighborhoods?
-```{r}
 # sort coordinates into high income neighborhoods
 high_income_small_grocery <- small_grocery %>%
   st_join(high_income) %>% 
@@ -253,7 +250,7 @@ high_income_small_grocery <- small_grocery %>%
 
 ```
 
-#plot small grocery stores in baltimore
+#plot small grocery stores in baltimore based on income
 ```{r}
 ggplot()+
 geom_sf(data=neighborhoods)+
@@ -265,17 +262,15 @@ labs(title = "Small Grocery and Corner Stores in High and Low Income Baltimore N
        caption = "Graphic by Natalie Adams")
 ```
 
-#How many convenience stores are in low income neighborhoods?
+#How does the number of convenience stores compare in low income and high income Baltimore neighborhoods?
+There are 166 convenience stores in low income neighborhoods and 116 convenience stores in high income neighborhoods. The average number of convenience stores in low and high income neighborhoods is virtually the same (5.1 in low income compared to 5.0 in high income).  Convenience stores typically have "junk food" and snacks, like chips, soda and candy. Large chain convenience stores, such as Royal Farms and Wawa, have options to order hot food, like fried chicken and sandwiches. Some convenience stores have fresh fruit, such as apples and bananas, but overall, do not offer great access to fresh food. While there is an equal percentage of convenience stores in high income and low income neighborhoods, the lower percentage of supermarkets in low income neighborhoods could indicate a stronger reliance on convenience stores for buying food.
+
 ```{r}
 # sort coordinates into low income neighborhoods
 low_income_convenience_stores <- convenience_stores %>%
   st_join(low_income) %>% 
   filter(income_level == "low")
 
-```
-
-#How many convenience stores are in high income neighborhoods?
-```{r}
 # sort coordinates into high income neighborhoods
 high_income_convenience_stores <- convenience_stores %>%
   st_join(high_income) %>% 
@@ -283,41 +278,25 @@ high_income_convenience_stores <- convenience_stores %>%
 
 ```
 
-#plot convenience stores in baltimore
+#plot convenience stores in baltimore based on income
 ```{r}
 ggplot()+
 geom_sf(data=neighborhoods)+
 geom_sf(data=low_income_convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=income_level))+
 geom_sf(data=high_income_convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=income_level))+
 theme_minimal()+
-labs(title = "Convenience S btores in High and Low Income Baltimore Neighborhoods", 
+labs(title = "Convenience Stores in High and Low Income Baltimore Neighborhoods", 
        subtitle = "Johns Hopkins and Baltimore Neighborhood Indicators Alliance Data, 2022",
        caption = "Graphic by Natalie Adams")
 ```
 
+#clean race data and neighborhoods shapefile
+Selected white data and cleaned column names.
 
-
-```{r}
-#population status
-majority_white <- baltimore_population %>% 
-  mutate(
-    population_status = case_when(
-        percent_white < 50 ~ "non_majority_white",
-        percent_white >= 50 ~ "majority_white"
-      )
-  )
-#majority and non majority white tables
- majority_white <- percent_white2 %>%
-  filter(population_status == "majority_white") %>%
-  inner_join(neighborhoods, by="neighborhood")
-
- non_majority_white<- percent_white2 %>%
-  filter(population_status == "non_majority_white") %>%
-  inner_join(neighborhoods, by="neighborhood")
-```
+We defined majority white neighborhoods as neighborhoods with a neighborhood with a 50% or grater white population and non majority white neighborhoods as a neighborhood with a less than 50% white population. There are 11 majority white neighborhoods and 44 non majority white neighborhoods.
 
 ```{r}
-# Load and clean low income neighborhood shapefile
+# filter for majority white neighborhoods
 majority_white <- st_read("income_shapefiles/median_household_income.shp") %>% 
   clean_names() %>%
   select(csa2010, geometry) %>% 
@@ -332,7 +311,7 @@ majority_white <- st_read("income_shapefiles/median_household_income.shp") %>%
   filter(population_status == "majority_white") %>%
   st_transform(crs=4269)
 
-# Load and clean low income neighborhood shapefile
+# filter for non majority white neighborhoods
 non_majority_white <- st_read("income_shapefiles/median_household_income.shp") %>% 
   clean_names() %>%
   select(csa2010, geometry) %>% 
@@ -350,11 +329,110 @@ non_majority_white <- st_read("income_shapefiles/median_household_income.shp") %
 
 ```
 
+#How does the number of supermarkets compare in majority white and non majority white Baltimore neighborhoods?
+There are 14 supermarkets in majority white neighborhoods and 35 supermarkets in non majority white neighborhoods. While non majority white neighborhoods have a higher number of supermarkets the ratio of supermarkets for majority white neighborhoods (14 supermarkets for 11 neighborhoods) is greater than the ratio of supermarkets for non majority white neighborhoods (35 supermarkets for 44 neighborhoods). This indicates that white residents have greater access to supermarkets and fresh food than non white residents.
+
 ```{r}
-# sort coordinates into high income neighborhoods
-high_income_supermarkets <- supermarkets %>%
-  st_join(high_income) %>% 
-  filter(income_level == "high")
+# sort coordinates into majority white neighborhoods
+majority_white_supermarkets <- supermarkets %>%
+  st_join(majority_white) %>% 
+  filter(population_status == "majority_white")
+
+# sort coordinates into non majority white neighborhoods
+non_majority_white_supermarkets <- supermarkets %>%
+  st_join(non_majority_white) %>% 
+  filter(population_status == "non_majority_white")
 
 ```
 
+#plot supermarkets in baltimore based on race
+```{r}
+ggplot()+
+geom_sf(data=neighborhoods)+
+geom_sf(data=majority_white_supermarkets %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=population_status))+
+geom_sf(data=non_majority_white_supermarkets %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=population_status))+
+theme_minimal()+
+labs(title = "Supermarkets in Majority White and Non Majority White Baltimore Neighborhoods", 
+       subtitle = "Johns Hopkins and Baltimore Neighborhood Indicators Alliance Data, 2022",
+       caption = "Graphic by Natalie Adams")
+```
+
+#How does the number of small grocery and corner stores compare in majority white and non majority white Baltimore neighborhoods?
+There are 12 times as many small grocery/corner stores in non majority white neighborhoods (373) than majority white neighborhoods (31). Small grocery/corner stores typically offer ethnic or cultural food options, such as Asian or South American, so it makes sense for most of these stores to be in majority non white communities. It is unclear from this data whether the high number of small grocery/corner stores is due to preference of the neighborhood populations, a lack of access to other types of food stores (such as supermarkets), other factors or a combination of factors.
+
+```{r}
+# sort coordinates into majority white neighborhoods
+majority_white_small_grocery <- small_grocery %>%
+  st_join(majority_white) %>% 
+  filter(population_status == "majority_white")
+
+# sort coordinates into non majority white neighborhoods
+non_majority_white_small_grocery <- small_grocery %>%
+  st_join(non_majority_white) %>% 
+  filter(population_status == "non_majority_white")
+
+```
+
+#plot small grocery stores in baltimore based on race
+```{r}
+ggplot()+
+geom_sf(data=neighborhoods)+
+geom_sf(data=majority_white_small_grocery %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=population_status))+
+geom_sf(data=non_majority_white_small_grocery %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=population_status))+
+theme_minimal()+
+labs(title = "Small Grocery and Corner Stores in Majority White and Non Majority White Baltimore Neighborhoods", 
+       subtitle = "Johns Hopkins and Baltimore Neighborhood Indicators Alliance Data, 2022",
+       caption = "Graphic by Natalie Adams")
+```
+
+#How does the number of convenience stores compare in majority white and non majority white Baltimore neighborhoods?
+There are 49 convenience stores in majority white neighborhoods and 233 convenience stores in non majority white neighborhoods. The percentage of convenience stores in majority white and non majority white neighborhoods is nearly equal (4.5 in majority white compared to 5.3 in non majority white). Convenience stores typically have "junk food" and snacks, like chips, soda and candy. Large chain convenience stores, such as Royal Farms and Wawa, have options to order hot food, like fried chicken and sandwiches. Some convenience stores have fresh fruit, such as apples and bananas, but overall, do not offer great access to fresh food. While there is a nearly equal percentage of convenience stores in majority white and non majority white neighborhoods, the lower percentage of supermarkets in non majority white neighborhoods could indicate a stronger reliance on convenience stores for buying food.
+
+```{r}
+# sort coordinates into majority white neighborhoods
+majority_white_convenience_stores <- convenience_stores %>%
+  st_join(majority_white) %>% 
+  filter(population_status == "majority_white")
+
+# sort coordinates into non majority white neighborhoods
+non_majority_white_convenience_stores <- convenience_stores %>%
+  st_join(non_majority_white) %>% 
+  filter(population_status == "non_majority_white")
+
+```
+
+#plot convenience stores in baltimore based on race
+```{r}
+ggplot()+
+geom_sf(data=neighborhoods)+
+geom_sf(data=majority_white_convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=population_status))+
+geom_sf(data=non_majority_white_convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=population_status))+
+theme_minimal()+
+labs(title = "Convenience Stores in Majority White and Non Majority White Baltimore Neighborhoods", 
+       subtitle = "Johns Hopkins and Baltimore Neighborhood Indicators Alliance Data, 2022",
+       caption = "Graphic by Natalie Adams")
+```
+
+#leaflet race graph
+A work in progress, more to come.
+
+```{r}
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(data=majority_white,
+              color = ("#fbd009"),
+              weight = 1.5,
+              smoothFactor = 0.2,
+              fillOpacity = 0.1,
+              label = majority_white$neighborhood) %>% 
+  addPolygons(data=non_majority_white,
+              color = ("#199bd6"),
+              weight = 1.5,
+              smoothFactor = 0.2,
+              fillOpacity = 0.1,
+              label = non_majority_white$neighborhood) %>%
+  addCircles(data=baltimore_stores,
+             weight = 2,
+             color = ("#e62525"),
+             label= paste("Store Name:",baltimore_stores$name, "Store Type:", baltimore_stores$store_type))
+```
