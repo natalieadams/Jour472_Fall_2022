@@ -290,7 +290,7 @@ geom_sf(data=neighborhoods)+
 geom_sf(data=low_income_convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=income_level))+
 geom_sf(data=high_income_convenience_stores %>% st_as_sf(coords = c("x", "y"), crs = 4326), mapping=aes(color=income_level))+
 theme_minimal()+
-labs(title = "Convenience Stores in High and Low Income Baltimore Neighborhoods", 
+labs(title = "Convenience S btores in High and Low Income Baltimore Neighborhoods", 
        subtitle = "Johns Hopkins and Baltimore Neighborhood Indicators Alliance Data, 2022",
        caption = "Graphic by Natalie Adams")
 ```
@@ -316,4 +316,45 @@ majority_white <- baltimore_population %>%
   inner_join(neighborhoods, by="neighborhood")
 ```
 
+```{r}
+# Load and clean low income neighborhood shapefile
+majority_white <- st_read("income_shapefiles/median_household_income.shp") %>% 
+  clean_names() %>%
+  select(csa2010, geometry) %>% 
+  rename(neighborhood = 1) %>% 
+  inner_join(percent_white2, by="neighborhood") %>% 
+  mutate(
+    population_status = case_when(
+        percent_white < 50 ~ "non_majority_white",
+        percent_white >= 50 ~ "majority_white"
+      )
+  ) %>%
+  filter(population_status == "majority_white") %>%
+  st_transform(crs=4269)
+
+# Load and clean low income neighborhood shapefile
+non_majority_white <- st_read("income_shapefiles/median_household_income.shp") %>% 
+  clean_names() %>%
+  select(csa2010, geometry) %>% 
+  rename(neighborhood = 1) %>% 
+  inner_join(percent_white2, by="neighborhood") %>% 
+  mutate(
+    population_status = case_when(
+        percent_white < 50 ~ "non_majority_white",
+        percent_white >= 50 ~ "majority_white"
+      )
+  ) %>%
+  filter(population_status == "non_majority_white") %>%
+  st_transform(crs=4269)
+
+
+```
+
+```{r}
+# sort coordinates into high income neighborhoods
+high_income_supermarkets <- supermarkets %>%
+  st_join(high_income) %>% 
+  filter(income_level == "high")
+
+```
 
