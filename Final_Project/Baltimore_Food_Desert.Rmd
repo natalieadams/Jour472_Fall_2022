@@ -86,43 +86,36 @@ total_pop2 <- total_pop1 %>%
   select(CSA2010, tpop20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, total_pop_2020 = 2)
-
 # white population by baltimore neighborhood clean
 percent_white2 <- percent_white1 %>% 
   select(CSA2010, pwhite20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_white = 2)
-
 # black population by baltimore neighborhood clean
 percent_black2 <- percent_black1 %>% 
   select(CSA2010, paa20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_black = 2)
-
 # hispanic population by baltimore neighborhood clean
 percent_hispanic2 <- percent_hispanic1 %>% 
   select(CSA2010, phisp20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_hispanic = 2)
-
 # asian population by baltimore neighborhood clean
 percent_asian2 <- percent_asian1 %>% 
   select(CSA2010, pasi20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_asian = 2)
-
 # other race population by baltimore neighborhood clean
 percent_other2 <- percent_other1 %>% 
   select(CSA2010, ppac20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_other = 2)
-
 # two or more races population by baltimore neighborhood clean
 percent_more2 <- percent_more1 %>% 
   select(CSA2010, p2more20) %>% 
   clean_names() %>%
   rename(neighborhood = 1, percent_two_or_more = 2)
-
 # total baltimore population by race and baltimore neighborhood clean
 baltimore_population <- total_pop2 %>% 
   inner_join(percent_white2, by="neighborhood") %>% 
@@ -142,8 +135,8 @@ baltimore_stores <- stores %>%
   select(Main_Categ, Company_Na, County, Address, ZIP_Code, X, Y) %>% 
   filter(County == "Baltimore City") %>% 
   clean_names() %>%
-  rename(store_type = 1, name = 2)
-
+  rename(store_type = 1, name = 2) %>% 
+  st_as_sf(coords = c("x", "y"), crs = 4269)
 # baltimore supermarkets
 supermarkets <- read_csv("food_stores.csv") %>% 
   select(Main_Categ, Company_Na, County, Address, ZIP_Code, X, Y) %>% 
@@ -152,7 +145,6 @@ supermarkets <- read_csv("food_stores.csv") %>%
   rename(store_type = 1, name = 2) %>%
   filter(store_type == "Supermarket") %>% 
   st_as_sf(coords = c("x", "y"), crs = 4269)
-
 # baltimore small grocery stores
 small_grocery <- read_csv("food_stores.csv") %>% 
   select(Main_Categ, Company_Na, County, Address, ZIP_Code, X, Y) %>% 
@@ -161,7 +153,6 @@ small_grocery <- read_csv("food_stores.csv") %>%
   rename(store_type = 1, name = 2) %>%
   filter(store_type == "Small Grocery/Corner Store") %>% 
   st_as_sf(coords = c("x", "y"), crs = 4269)
-
 # baltimore convenience stores
 convenience_stores <- read_csv("food_stores.csv") %>% 
   select(Main_Categ, Company_Na, County, Address, ZIP_Code, X, Y) %>% 
@@ -191,7 +182,6 @@ low_income <- st_read("income_shapefiles/median_household_income.shp") %>%
   ) %>% 
   filter(income_level == "low") %>%
   st_transform(crs=4269)
-
 # Load and clean high income neighborhood shapefile
 high_income <- st_read("income_shapefiles/median_household_income.shp") %>% 
   clean_names() %>%
@@ -215,7 +205,6 @@ There are 25 supermarkets in low income neighborhoods and 24 supermarkets in hig
 low_income_supermarkets <- supermarkets %>%
   st_join(low_income) %>% 
   filter(income_level == "low")
-
 # sort coordinates into high income neighborhoods
 high_income_supermarkets <- supermarkets %>%
   st_join(high_income) %>% 
@@ -242,12 +231,10 @@ There are 289 small grocery/corner stores in low income neighborhoods and 115 sm
 low_income_small_grocery <- small_grocery %>%
   st_join(low_income) %>% 
   filter(income_level == "low")
-
 # sort coordinates into high income neighborhoods
 high_income_small_grocery <- small_grocery %>%
   st_join(high_income) %>% 
   filter(income_level == "high")
-
 ```
 
 #plot small grocery stores in baltimore based on income
@@ -270,12 +257,10 @@ There are 166 convenience stores in low income neighborhoods and 116 convenience
 low_income_convenience_stores <- convenience_stores %>%
   st_join(low_income) %>% 
   filter(income_level == "low")
-
 # sort coordinates into high income neighborhoods
 high_income_convenience_stores <- convenience_stores %>%
   st_join(high_income) %>% 
   filter(income_level == "high")
-
 ```
 
 #plot convenience stores in baltimore based on income
@@ -310,7 +295,6 @@ majority_white <- st_read("income_shapefiles/median_household_income.shp") %>%
   ) %>%
   filter(population_status == "majority_white") %>%
   st_transform(crs=4269)
-
 # filter for non majority white neighborhoods
 non_majority_white <- st_read("income_shapefiles/median_household_income.shp") %>% 
   clean_names() %>%
@@ -325,8 +309,6 @@ non_majority_white <- st_read("income_shapefiles/median_household_income.shp") %
   ) %>%
   filter(population_status == "non_majority_white") %>%
   st_transform(crs=4269)
-
-
 ```
 
 #How does the number of supermarkets compare in majority white and non majority white Baltimore neighborhoods?
@@ -337,12 +319,10 @@ There are 14 supermarkets in majority white neighborhoods and 35 supermarkets in
 majority_white_supermarkets <- supermarkets %>%
   st_join(majority_white) %>% 
   filter(population_status == "majority_white")
-
 # sort coordinates into non majority white neighborhoods
 non_majority_white_supermarkets <- supermarkets %>%
   st_join(non_majority_white) %>% 
   filter(population_status == "non_majority_white")
-
 ```
 
 #plot supermarkets in baltimore based on race
@@ -365,12 +345,10 @@ There are 12 times as many small grocery/corner stores in non majority white nei
 majority_white_small_grocery <- small_grocery %>%
   st_join(majority_white) %>% 
   filter(population_status == "majority_white")
-
 # sort coordinates into non majority white neighborhoods
 non_majority_white_small_grocery <- small_grocery %>%
   st_join(non_majority_white) %>% 
   filter(population_status == "non_majority_white")
-
 ```
 
 #plot small grocery stores in baltimore based on race
@@ -393,12 +371,10 @@ There are 49 convenience stores in majority white neighborhoods and 233 convenie
 majority_white_convenience_stores <- convenience_stores %>%
   st_join(majority_white) %>% 
   filter(population_status == "majority_white")
-
 # sort coordinates into non majority white neighborhoods
 non_majority_white_convenience_stores <- convenience_stores %>%
   st_join(non_majority_white) %>% 
   filter(population_status == "non_majority_white")
-
 ```
 
 #plot convenience stores in baltimore based on race
