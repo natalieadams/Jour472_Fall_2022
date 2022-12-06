@@ -133,7 +133,7 @@ Selected relevant data points, filtered it for just the Baltimore City stores an
 # baltimore stores
 baltimore_stores <- stores %>% 
   select(Main_Categ, Company_Na, County, Address, ZIP_Code, X, Y) %>% 
-  filter(County == "Baltimore City") %>%
+  filter(County == "Baltimore City") %>% 
   clean_names() %>%
   rename(store_type = 1, name = 2) %>% 
   st_as_sf(coords = c("x", "y"), crs = 4269) %>% 
@@ -162,7 +162,6 @@ convenience_stores <- read_csv("food_stores.csv") %>%
   rename(store_type = 1, name = 2) %>%
   filter(store_type == "Convenience Store") %>% 
   st_as_sf(coords = c("x", "y"), crs = 4269)
-
 ```
 
 #clean median household income data and neighborhoods shapefile
@@ -280,7 +279,7 @@ labs(title = "Convenience Stores in High and Low Income Baltimore Neighborhoods"
 #clean race data and neighborhoods shapefile
 Selected white data and cleaned column names.
 
-We defined majority white neighborhoods as neighborhoods with a neighborhood with a 50% or greater white population and non majority white neighborhoods as a neighborhood with a less than 50% white population. There are 11 majority white neighborhoods and 44 non majority white neighborhoods.
+We defined majority white neighborhoods as neighborhoods with a neighborhood with a 50% or grater white population and non majority white neighborhoods as a neighborhood with a less than 50% white population. There are 11 majority white neighborhoods and 44 non majority white neighborhoods.
 
 ```{r}
 # filter for majority white neighborhoods
@@ -392,9 +391,15 @@ labs(title = "Convenience Stores in Majority White and Non Majority White Baltim
 ```
 
 #leaflet race graph
+The neighborhoods highlighted in yellow represent those with a majority white population. The neighborhoods in blue have a majority non-white population. 
 A work in progress, more to come.
 
 ```{r}
+pal <- colorFactor(
+  palette = c('red', 'darkgreen', 'black'),
+  domain = baltimore_stores$store_type
+)
+
 leaflet() %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   addPolygons(data=majority_white,
@@ -411,6 +416,49 @@ leaflet() %>%
               label = non_majority_white$neighborhood) %>%
   addCircles(data=baltimore_stores,
              weight = 2,
-             color = ("#e62525"),
-             label= paste("Store Name:",baltimore_stores$name, "Store Type:", baltimore_stores$store_type))
+             color = ~pal(store_type),
+             label= paste("Store Name:",baltimore_stores$name, "Store Type:", baltimore_stores$store_type)) %>% 
+    addLegend(
+   position = "bottomright",
+    pal = pal,
+    values = baltimore_stores$store_type,
+    title = "Baltimore Stores by Type"
+  )
+
+
 ```
+#Income Leaflet Graph
+The neighborhoods with a low income are highlighted in yellow and neighborhoods with high incomes are highlighted in blue.
+```{r}
+pal <- colorFactor(
+  palette = c('red', 'darkgreen', 'black'),
+  domain = baltimore_stores$store_type
+)
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(data=low_income,
+              color = ("#199bd6"),
+              weight = 1.5,
+              smoothFactor = 0.2,
+              fillOpacity = 0.1,
+              label = low_income$neighborhood) %>% 
+  addPolygons(data=high_income,
+              color = ("#fbd009"),
+              weight = 1.5,
+              smoothFactor = 0.2,
+              fillOpacity = 0.1,
+              label = high_income$neighborhood) %>%
+  addCircles(data=baltimore_stores,
+             weight = 2,
+             color = ~pal(store_type),
+             label= paste("Store Name:",baltimore_stores$name, "Store Type:", baltimore_stores$store_type)) %>% 
+    addLegend(
+   position = "bottomright",
+    pal = pal,
+    values = baltimore_stores$store_type,
+    title = "Baltimore Stores by Type"
+  )
+
+```
+
+
