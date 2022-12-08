@@ -5,7 +5,9 @@ output: html_notebook
 
 Natalie Adams and Matthew Haraden
 
-For our final project, we plan to focus on the prevalence of grocery stores in Baltimore City. Food deserts are an issue in cities, especially in low income and minority areas. We want to look at how food deserts impact Baltimore.
+Story Memo Link: https://docs.google.com/document/d/1FNg8osWoG5mVxaWA0KETqtRD_43NwM_R2noyWTJPKB4/edit?usp=sharing
+
+For our final project, we plan to focus on the prevalence of grocery stores in Baltimore City. Food deserts are an issue in cities, especially in low income and minority areas.
 
 Looking into grocery store data in Baltimore can help us determine if these stores are more accessible to people of a higher income versus people of a lower income. It can also help us see if there are any particular grocery stores that appear more often in higher income communities. The same goes for majority white and non-white majority neighborhoods. This data can be used to find possible discrepancies for grocery store locations in Baltimore.
 
@@ -196,10 +198,21 @@ high_income <- st_read("income_shapefiles/median_household_income.shp") %>%
   ) %>% 
   filter(income_level == "high") %>%
   st_transform(crs=4269)
+# table for leaflet
+baltimore_neighborhoods_income <- neighborhoods %>% 
+  clean_names() %>% 
+  select(csa2010, mhhi20) %>% 
+  rename(neighborhood = 1, median_income=2) %>% 
+  mutate(
+    income_level = case_when(
+        median_income < 52164 ~ "low",
+        median_income >= 52164 ~ "high"
+      )
+  )
 ```
 
 #How does the number of supermarkets compare in low income and high income Baltimore neighborhoods?
-There are 25 supermarkets in low income neighborhoods and 24 supermarkets in high income neighborhoods. While low income neighborhoods have one more supermarket than high income neighborhoods, there are more low income neighborhoods (32) than high income neighborhoods (23), making the ratio of supermarkets to neighborhoods greater for high income neighborhoods. There are more than seven low income neighborhoods without a supermarket. Every high income neighborhood has a supermarket, plus an additional one. This shows that high income residents have greater access to supermarkets and fresh food than low income residents.
+There are 25 supermarkets in low income neighborhoods and 24 supermarkets in high income neighborhoods. While low income neighborhoods have one more supermarket than high income neighborhoods, there are more low income neighborhoods (32) than high income neighborhoods (23), making the ratio of supermarkets to neighborhoods greater for high income neighborhoods. There are some low income neighborhoods without a supermarket at all, while there are enough supermarkets for every high income neighborhood, plus an additional one. This shows that high income residents have greater access to supermarkets and fresh food than low income residents.
 
 ```{r}
 # sort coordinates into low income neighborhoods
@@ -276,6 +289,49 @@ labs(title = "Convenience Stores in High and Low Income Baltimore Neighborhoods"
        caption = "Graphic by Natalie Adams")
 ```
 
+#Income Leaflet Graph
+```{r}
+pal <- colorFactor(
+  palette = c('red', 'darkgreen', 'black'),
+  domain = baltimore_stores$store_type)
+
+pal2 <- colorFactor(
+  palette = c('#fbd009', '#199bd6'),
+  domain = baltimore_neighborhoods_income$income_level)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(data=low_income,
+              color = ("#199bd6"),
+              weight = 1.5,
+              smoothFactor = 0.2,
+              fillOpacity = 0.1,
+              label = low_income$neighborhood) %>% 
+  addPolygons(data=high_income,
+              color = ("#fbd009"),
+              weight = 1.5,
+              smoothFactor = 0.2,
+              fillOpacity = 0.1,
+              label = high_income$neighborhood) %>%
+  addCircles(data=baltimore_stores,
+             weight = 2,
+             color = ~pal(store_type),
+             label= paste("Store Name:",baltimore_stores$name)) %>% 
+    addLegend(
+   position = "bottomleft",
+    pal = pal,
+    values = baltimore_stores$store_type,
+    title = "Stores by Type", group="group_1") %>% 
+  addLegend(
+   position = "bottomright",
+    pal = pal2,
+    values = baltimore_neighborhoods_income$income_level,
+    title = "Neighborhood Income", group="group_2") %>% 
+  addLayersControl(overlayGroups = c("group_1","group_2"),
+                   options = layersControlOptions(collapsed = FALSE))
+
+```
+
 #clean race data and neighborhoods shapefile
 Selected white data and cleaned column names.
 
@@ -310,6 +366,15 @@ non_majority_white <- st_read("income_shapefiles/median_household_income.shp") %
   ) %>%
   filter(population_status == "non_majority_white") %>%
   st_transform(crs=4269)
+# table for leaflet
+baltimore_neighborhoods_race <- baltimore_population %>% 
+  select(neighborhood, percent_white) %>%
+  mutate(
+    population_status = case_when(
+        percent_white < 50 ~ "non_majority_white",
+        percent_white >= 50 ~ "majority_white"
+      )
+  )
 ```
 
 #How does the number of supermarkets compare in majority white and non majority white Baltimore neighborhoods?
@@ -391,14 +456,14 @@ labs(title = "Convenience Stores in Majority White and Non Majority White Baltim
 ```
 
 #leaflet race graph
-The neighborhoods highlighted in yellow represent those with a majority white population. The neighborhoods in blue have a majority non-white population. 
-A work in progress, more to come.
-
 ```{r}
-pal <- colorFactor(
+pal1 <- colorFactor(
   palette = c('red', 'darkgreen', 'black'),
-  domain = baltimore_stores$store_type
-)
+  domain = baltimore_stores$store_type)
+
+pal2 <- colorFactor(
+  palette = c('#fbd009', '#199bd6'),
+  domain = baltimore_neighborhoods_race$population_status)
 
 leaflet() %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
@@ -417,48 +482,22 @@ leaflet() %>%
   addCircles(data=baltimore_stores,
              weight = 2,
              color = ~pal(store_type),
-             label= paste("Store Name:",baltimore_stores$name, "Store Type:", baltimore_stores$store_type)) %>% 
+             label= paste("Store Name:",baltimore_stores$name)) %>% 
     addLegend(
-   position = "bottomright",
-    pal = pal,
+   position = "bottomleft",
+    pal = pal1,
     values = baltimore_stores$store_type,
-    title = "Baltimore Stores by Type"
-  )
+    title = "Stores by Type", group="group_1") %>% 
+  addLegend(
+   position = "bottomright",
+    pal = pal2,
+    values = baltimore_neighborhoods_race$population_status,
+    title = "Neighborhood Race", group="group_2") %>% 
+  addLayersControl(overlayGroups = c("group_1","group_2"),
+                   options = layersControlOptions(collapsed = FALSE))
 
 
 ```
-#Income Leaflet Graph
-The neighborhoods with a low income are highlighted in yellow and neighborhoods with high incomes are highlighted in blue.
-```{r}
-pal <- colorFactor(
-  palette = c('red', 'darkgreen', 'black'),
-  domain = baltimore_stores$store_type
-)
-leaflet() %>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
-  addPolygons(data=low_income,
-              color = ("#199bd6"),
-              weight = 1.5,
-              smoothFactor = 0.2,
-              fillOpacity = 0.1,
-              label = low_income$neighborhood) %>% 
-  addPolygons(data=high_income,
-              color = ("#fbd009"),
-              weight = 1.5,
-              smoothFactor = 0.2,
-              fillOpacity = 0.1,
-              label = high_income$neighborhood) %>%
-  addCircles(data=baltimore_stores,
-             weight = 2,
-             color = ~pal(store_type),
-             label= paste("Store Name:",baltimore_stores$name, "Store Type:", baltimore_stores$store_type)) %>% 
-    addLegend(
-   position = "bottomright",
-    pal = pal,
-    values = baltimore_stores$store_type,
-    title = "Baltimore Stores by Type"
-  )
 
-```
 
 
